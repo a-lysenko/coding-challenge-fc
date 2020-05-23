@@ -10,7 +10,6 @@ export const createRoutes = (db: Db) => {
   router.get('/', async (req, res) => {
     try {
       const items = await dacheController.getAll().toArray();
-      console.log('route item get all. items', items);
       res.send(items);
     } catch (err) {
       console.log('route item get all. ERROR');
@@ -25,7 +24,6 @@ export const createRoutes = (db: Db) => {
     async (req, res) => {
       try {
         const result = await dacheController.save(req.body);
-        console.log('route item post. result', result);
         return res.status(
           result.message === DacheSearchMsg.Miss ? 201 : 200
         )
@@ -71,7 +69,6 @@ export const createRoutes = (db: Db) => {
         key: req.params.id,
         value: req.body.value
       });
-      console.log('route item update. result', result);
       return res.sendStatus(
         result.created ? 201 : 204
       );

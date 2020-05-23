@@ -36,8 +36,6 @@ export class DacheController {
 
     const value = randomize('*', 27);
 
-    console.log('DacheController save. value ', value);
-
     const result = await this.#collection.insertOne(
       { key, value }
     );
@@ -56,15 +54,11 @@ export class DacheController {
   async remove(key: string) {
     const result = await this.#collection.deleteOne({ key });
 
-    console.log(`Dache remove. Removed ${result.deletedCount}`);
-
     return result.deletedCount;
   }
 
   async removeAll() {
     const result = await this.#collection.deleteMany({});
-
-    console.log(`Dache remove all. Removed ${result.deletedCount}`);
 
     return result.deletedCount;
   }
@@ -78,8 +72,6 @@ export class DacheController {
       },
       { upsert: true }
     );
-
-    console.log(`Dache update. Modified ${result.modifiedCount}, upserted ${result.upsertedCount}`);
 
     return {
       created: result.upsertedCount > 0
