@@ -24,7 +24,7 @@ export class DacheController {
   }
 
   getAll() {
-    return this.#collection.find({});
+    return this.#collection.find({}, { projection: { _id: 0 } });
   }
 
   async save({ key }: Pick<Item, 'key'>) {

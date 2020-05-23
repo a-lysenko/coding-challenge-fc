@@ -20,20 +20,23 @@ export const createRoutes = (db: Db) => {
   });
 
   // create one
-  router.post<null, Omit<Item, '_id'>, { key: string }>('/', async (req, res) => {
-    try {
-      const result = await dacheController.save(req.body);
-      console.log('route item post. result', result);
-      return res.status(
-        result.message === DacheSearchMsg.Miss ? 201 : 200
-      )
-        .send(result.item);
-    } catch (err) {
-      console.log('route item post. ERROR');
-      console.error(err);
-      res.status(500).send(err);
+  router.post<null, { message: DacheSearchMsg, item: Omit<Item, '_id'> }, { key: string }>(
+    '/',
+    async (req, res) => {
+      try {
+        const result = await dacheController.save(req.body);
+        console.log('route item post. result', result);
+        return res.status(
+          result.message === DacheSearchMsg.Miss ? 201 : 200
+        )
+          .send(result);
+      } catch (err) {
+        console.log('route item post. ERROR');
+        console.error(err);
+        res.status(500).send(err);
+      }
     }
-  });
+  );
 
   // delete one
   router.delete<{ id: string }, null>('/:id', async (req, res) => {
@@ -62,7 +65,7 @@ export const createRoutes = (db: Db) => {
   });
 
   // update
-  router.put<{id: string}, {}, Pick<Item, 'value'>>('/:id', async (req, res) => {
+  router.put<{ id: string }, {}, Pick<Item, 'value'>>('/:id', async (req, res) => {
     try {
       const result = await dacheController.update({
         key: req.params.id,
