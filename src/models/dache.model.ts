@@ -14,16 +14,18 @@ type CheckExists =
   { item: Item, expired: boolean, limitIsReached: null }
   | { item: null, expired: null, limitIsReached: boolean };
 
-const defaultTTL = 10 * 60 * 1000;
-
 export class DacheModel {
   #collection: Collection<Item>;
   #ttl: number;
   #cacheLimit: number;
 
-  constructor(db: Db, ttl = defaultTTL, cacheLimit = process.env.CACHE_LIMIT) {
+  constructor(
+    db: Db,
+    ttl = process.env.CACHE_TTL_MS,
+    cacheLimit = process.env.CACHE_LIMIT)
+  {
     this.#collection = db.collection(CollectionName.Dache);
-    this.#ttl = ttl;
+    this.#ttl = Number(ttl) || -1;
     this.#cacheLimit = Number(cacheLimit) || -1;
   }
 

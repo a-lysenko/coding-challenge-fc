@@ -14,6 +14,7 @@ beforeAll(async () => {
   }
 
   process.env.CACHE_LIMIT = '3';
+  process.env.CACHE_TTL_MS = '1000';
 
   instance = await createServer();
   app = instance.app;
@@ -32,19 +33,27 @@ describe('Get all', () => {
     { key: 'cache key 2', value: 'Random value 20', created: new Date() }
   ];
 
+  const expiredDoc = {
+    key: 'expired-cache-key',
+    value: 'Random value',
+    created: new Date(Date.now() - 100 * 60 * 1000)
+  };
+
   beforeEach(async () => {
-    return await dacheCollection.insertMany(
-      docs.map(doc => ({ ...doc }))
-    );
+    return await dacheCollection.insertMany([
+      ...docs.map(doc => ({ ...doc })),
+      expiredDoc
+    ]);
   });
 
-  test('should retrieve all stored data', async (done) => {
+  test('should retrieve all stored valid data', async () => {
     const result = await request(app).get('/api/cache');
-    expect(result.status).toEqual(200);
-    expect(result.body).toEqual(
-      docs.map(doc => ({...doc, created: doc.created.toISOString()}))
+
+    const docsCreatedISOString = docs.map(
+      doc => ({ ...doc, created: doc.created.toISOString() })
     );
-    done();
+    expect(result.status).toEqual(200);
+    expect(result.body).toEqual(docsCreatedISOString);
   });
 });
 
