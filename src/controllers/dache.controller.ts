@@ -1,6 +1,5 @@
-import { Collection, Db } from 'mongodb';
 import randomize from 'randomatic';
-import { CollectionName, DacheModel, Item } from '../models/dache.model';
+import { DacheModel, Item } from '../models/dache.model';
 
 export enum DacheSearchMsg {
   Miss = 'Cache miss',
@@ -8,23 +7,20 @@ export enum DacheSearchMsg {
 }
 
 export class DacheController {
-  #collection: Collection<Item>;
-
-  constructor(private db: Db, private dacheModel: DacheModel) {
-    this.#collection = db.collection(CollectionName.Dache);
-  }
+  constructor(private dacheModel: DacheModel) {}
 
   getAll() {
-    return this.#collection.find({}, { projection: { _id: 0 } });
+    return this.dacheModel.getCollection().find(
+      {}, { projection: { _id: 0 } }
+    );
   }
 
   async save({ key }: Pick<Item, 'key'>) {
-    const {item, limitIsRiched} = await this.dacheModel.checkExists(key);
+    const { item, limitIsRiched } = await this.dacheModel.checkExists(key);
 
     if (item) {
-      const updatedItem = await this.dacheModel.update(key);
-
-      return { message: DacheSearchMsg.Hit, item: updatedItem.value };
+      const updateResult = await this.dacheModel.update(key);
+      return { message: DacheSearchMsg.Hit, item: updateResult.value };
     }
 
     const value = randomize('*', 27);
@@ -36,22 +32,22 @@ export class DacheController {
   }
 
   async remove(key: string) {
-    const result = await this.#collection.deleteOne({ key });
+    const result = await this.dacheModel.getCollection().deleteOne({ key });
 
     return result.deletedCount;
   }
 
   async removeAll() {
-    const result = await this.#collection.deleteMany({});
+    const result = await this.dacheModel.getCollection().deleteMany({});
 
     return result.deletedCount;
   }
 
   async update({ key, value }: Omit<Item, '_id'>) {
-    const {item, limitIsRiched} = await this.dacheModel.checkExists(key);
+    const { item, limitIsRiched } = await this.dacheModel.checkExists(key);
 
     if (item) {
-      const updatedItem = this.dacheModel.update(key, value);
+      await this.dacheModel.update(key, value);
       return { created: false };
     }
 

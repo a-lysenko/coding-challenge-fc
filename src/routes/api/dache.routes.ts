@@ -3,10 +3,10 @@ import express from 'express';
 import { DacheController, DacheSearchMsg} from '../../controllers/dache.controller';
 import { DacheModel, Item } from '../../models/dache.model';
 
-export const createRoutes = (db: Db, dacheModel: DacheModel) => {
+export const createRoutes = (dacheModel: DacheModel) => {
   const router = express.Router();
 
-  const dacheController = new DacheController(db, dacheModel);
+  const dacheController = new DacheController(dacheModel);
   // get all
   router.get('/', async (req, res) => {
     try {

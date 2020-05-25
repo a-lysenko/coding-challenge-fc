@@ -26,6 +26,10 @@ export class DacheModel {
     this.#cacheLimit = cacheLimit;
   }
 
+  getCollection() {
+    return this.#collection;
+  }
+
   update(key: string, value: string = null) {
     return this.#collection.findOneAndUpdate(
       { key },
