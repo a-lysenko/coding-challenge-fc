@@ -10,7 +10,9 @@ export interface Item {
   created?: Date;
 }
 
-type CheckExists = { item: Item, limitIsRiched: null } | { item: null, limitIsRiched: boolean };
+type CheckExists =
+  { item: Item, expired: boolean, limitIsReached: null }
+  | { item: null, expired: null, limitIsReached: boolean };
 
 const defaultTTL = 10 * 60 * 1000;
 
@@ -27,6 +29,24 @@ export class DacheModel {
 
   getCollection() {
     return this.#collection;
+  }
+
+  getAll(customTTL: number = null) {
+    const ttl = customTTL || this.#ttl || -1;
+
+    return this.#collection.find(
+      {
+        ...(ttl !== -1
+            ? {
+              $expr: {
+                $gte: ['$created', new Date(Date.now() - ttl)]
+              }
+            }
+            : null
+        )
+      },
+      { projection: { _id: 0 } }
+    );
   }
 
   update(key: string, value: string = null) {
@@ -76,10 +96,18 @@ export class DacheModel {
       const cacheLimit = (customLimit || this.#cacheLimit);
 
       return {
-        item: null, limitIsRiched: cacheLimit !== -1 && documentCount >= cacheLimit
+        item: null,
+        expired: null,
+        limitIsReached: cacheLimit !== -1 && documentCount >= cacheLimit
       };
     }
-    return { item, limitIsRiched: null };
+
+    const ttl = customTTL || this.#ttl;
+    return {
+      item,
+      expired: (+item.created + ttl) < Date.now(),
+      limitIsReached: null
+    };
   }
 
   static async createClient(

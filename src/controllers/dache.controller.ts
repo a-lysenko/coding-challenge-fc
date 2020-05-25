@@ -11,13 +11,11 @@ export class DacheController {
   }
 
   getAll() {
-    return this.dacheModel.getCollection().find(
-      {}, { projection: { _id: 0 } }
-    );
+    return this.dacheModel.getAll();
   }
 
   async save({ key }: Pick<Item, 'key'>) {
-    const { item, limitIsRiched } = await this.dacheModel.checkExists(key);
+    const { item, limitIsReached } = await this.dacheModel.checkExists(key);
 
     if (item) {
       const updateResult = await this.dacheModel.update(key);
@@ -25,7 +23,7 @@ export class DacheController {
     }
 
     const value = randomize('*', 27);
-    if (limitIsRiched) {
+    if (limitIsReached) {
       await this.dacheModel.createThroughOverride(key, value);
       // console.log(`Dache save. Added through REUSE value: ${createResult.value}`);
     } else {
@@ -49,14 +47,14 @@ export class DacheController {
   }
 
   async update({ key, value }: Omit<Item, '_id'>) {
-    const { item, limitIsRiched } = await this.dacheModel.checkExists(key);
+    const { item, limitIsReached } = await this.dacheModel.checkExists(key);
 
     if (item) {
       await this.dacheModel.update(key, value);
       return { created: false };
     }
 
-    if (limitIsRiched) {
+    if (limitIsReached) {
       await this.dacheModel.createThroughOverride(key, value);
       // console.log(`Dache update. Added through REUSE value: ${createResult.value}`);
     } else {
