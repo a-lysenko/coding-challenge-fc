@@ -75,7 +75,8 @@ describe('POST', () => {
       expect(result).toEqual({
         _id: expect.any(Object),
         key: nonCachedKey,
-        value: expect.any(String)
+        value: expect.any(String),
+        created: expect.any(Date)
       });
     });
 
@@ -117,7 +118,8 @@ describe('UPDATE', () => {
         {
           _id: expect.any(Object),
           key: cachedKey,
-          value: updatedValue
+          value: updatedValue,
+          created: expect.any(Date)
         }
       ]);
     });
@@ -146,7 +148,8 @@ describe('UPDATE', () => {
         {
           _id: expect.any(Object),
           key: nonCachedKey,
-          value: updatedValue
+          value: updatedValue,
+          created: expect.any(Date)
         }
       ]);
     });

@@ -1,25 +1,16 @@
-import { Collection, Db, ObjectId } from 'mongodb';
+import { Collection, Db } from 'mongodb';
 import randomize from 'randomatic';
-
-export enum CollectionName {
-  Dache = 'dache'
-}
+import { CollectionName, DacheModel, Item } from '../models/dache.model';
 
 export enum DacheSearchMsg {
   Miss = 'Cache miss',
   Hit = 'Cache hit'
 }
 
-export interface Item {
-  _id: ObjectId;
-  key: string;
-  value: string;
-}
-
 export class DacheController {
   #collection: Collection<Item>;
 
-  constructor(private app: Express.Application, private db: Db) {
+  constructor(private db: Db, private dacheModel: DacheModel) {
     this.#collection = db.collection(CollectionName.Dache);
   }
 
@@ -28,27 +19,20 @@ export class DacheController {
   }
 
   async save({ key }: Pick<Item, 'key'>) {
-    const item = await this.#collection.findOne({ key });
+    const {item, limitIsRiched} = await this.dacheModel.checkExists(key);
 
     if (item) {
-      return { message: DacheSearchMsg.Hit, item };
+      const updatedItem = await this.dacheModel.update(key);
+
+      return { message: DacheSearchMsg.Hit, item: updatedItem.value };
     }
 
     const value = randomize('*', 27);
-
-    const result = await this.#collection.insertOne(
-      { key, value }
-    );
+    const result = await this.dacheModel.create(key, value);
 
     console.log(`Dache save. inserted id: ${result.insertedId}`);
 
     return { message: DacheSearchMsg.Miss, item: { key, value } };
-  }
-
-  getItemByKey(key: string) {
-    return this.#collection.findOne(
-      { key }
-    );
   }
 
   async remove(key: string) {
@@ -64,17 +48,17 @@ export class DacheController {
   }
 
   async update({ key, value }: Omit<Item, '_id'>) {
-    const result = await this.#collection.updateOne(
-      { key },
-      {
-        $set: { value },
-        $setOnInsert: { key }
-      },
-      { upsert: true }
-    );
+    const {item, limitIsRiched} = await this.dacheModel.checkExists(key);
 
-    return {
-      created: result.upsertedCount > 0
-    };
+    if (item) {
+      const updatedItem = this.dacheModel.update(key, value);
+      return { created: false };
+    }
+
+    const result = await this.dacheModel.create(key, value);
+
+    console.log(`Dache update. inserted id: ${result.insertedId}`, result);
+
+    return { created: true };
   }
 }

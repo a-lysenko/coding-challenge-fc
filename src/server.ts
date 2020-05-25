@@ -3,6 +3,7 @@ import logger from 'morgan';
 import cookieParser from 'cookie-parser';
 import * as rootRoutes from './routes';
 import { createClient } from './services/mongo-client.service';
+import { DacheModel } from './models/dache.model';
 
 export const createServer = async () => {
   const app = express();
@@ -13,11 +14,15 @@ export const createServer = async () => {
   app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, 'public')));
 
-  const {client: dbClient, db} = await createClient();
-  const rootRouter = await rootRoutes.createRootRoutes(db);
+  const {client: dbClient, db} = await DacheModel.createClient();
+  const dacheModel = new DacheModel(db);
+  const rootRouter = await rootRoutes.createRootRoutes(
+    db,
+    dacheModel
+  );
 
   app.use('/', rootRouter);
 
-  return { app, dbClient, db };
+  return { app, dbClient, db, dacheModel };
 }
 

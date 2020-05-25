@@ -1,11 +1,12 @@
 import { Db } from 'mongodb';
 import express from 'express';
-import { DacheController, DacheSearchMsg, Item } from '../../controllers/dache.controller';
+import { DacheController, DacheSearchMsg} from '../../controllers/dache.controller';
+import { DacheModel, Item } from '../../models/dache.model';
 
-export const createRoutes = (db: Db) => {
+export const createRoutes = (db: Db, dacheModel: DacheModel) => {
   const router = express.Router();
 
-  const dacheController = new DacheController(null, db);
+  const dacheController = new DacheController(db, dacheModel);
   // get all
   router.get('/', async (req, res) => {
     try {
