@@ -22,8 +22,9 @@ OR
 ## Details
 
 Each cache item is stored with a `created` parameter. It reflects the date of the latest one of the following events applied to the item: creation (may occur on POST, PUT), update (may occur on PUT), retrieving of the single item (may occur on POST).
-Value of it is used within the lookup (GET). Those cached items meet the lookup, that have the `created` value + `ttl` (set on `CACHE_TTL_MS`) exceeds the current date. Others aren't shown.
-Also the cache has a maximum of cached items (defined by `CACHE_LIMIT`). If the limit is reached, then new item is not added. Instead the oldest item is found by `created` and is overriden by new data (cache, value, current date).
+Value of it is used within the lookup (GET). Those cached items meet the lookup, that have the `created` value + `ttl` (set as `CACHE_TTL_MS`) exceeds the current date. Others aren't shown.
+
+Also the cache has a **maximum** of cached items (defined by `CACHE_LIMIT`). If the limit is reached, then new item is not added. Instead the oldest item is found by `created` and is overriden by new data (key, value, current date).
 
 ### API
 `GET /api/cache` - retrieves all valid cached items. Expired cache items are discarded.
