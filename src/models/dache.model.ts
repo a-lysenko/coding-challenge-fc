@@ -13,17 +13,16 @@ export interface Item {
 type CheckExists = { item: Item, limitIsRiched: null } | { item: null, limitIsRiched: boolean };
 
 const defaultTTL = 10 * 60 * 1000;
-const defaultCacheLimit = 10;
 
 export class DacheModel {
   #collection: Collection<Item>;
   #ttl: number;
   #cacheLimit: number;
 
-  constructor(db: Db, ttl = defaultTTL, cacheLimit = defaultCacheLimit) {
+  constructor(db: Db, ttl = defaultTTL, cacheLimit = process.env.CACHE_LIMIT) {
     this.#collection = db.collection(CollectionName.Dache);
     this.#ttl = ttl;
-    this.#cacheLimit = cacheLimit;
+    this.#cacheLimit = Number(cacheLimit) || -1;
   }
 
   getCollection() {
@@ -41,7 +40,7 @@ export class DacheModel {
         ),
         $currentDate: { created: true }
       },
-      { returnOriginal: false, projection: {_id: 0, key: 1, value: 1} }
+      { returnOriginal: false, projection: { _id: 0, key: 1, value: 1 } }
     );
   }
 
@@ -54,23 +53,37 @@ export class DacheModel {
     return this.#collection.insertOne(itemToSave);
   }
 
-  // reuse(key: string, value: string) {
-  //
-  // }
+  // This method find the oldest item from the cached ones
+  // and replaces its data: key, value, created date
+  createThroughOverride(key: string, value: string) {
+    return this.#collection.findOneAndUpdate(
+      {},
+      {
+        $set: { key, value },
+        $currentDate: { created: true }
+      },
+      {
+        sort: { created: 1 },
+        returnOriginal: false
+      }
+    );
+  }
 
   async checkExists(key: string, customTTL?: number, customLimit?: number): Promise<CheckExists> {
     const item = await this.#collection.findOne({ key });
     if (!item) {
       const documentCount = await this.#collection.estimatedDocumentCount();
+      const cacheLimit = (customLimit || this.#cacheLimit);
+
       return {
-        item: null, limitIsRiched: documentCount >= customLimit
+        item: null, limitIsRiched: cacheLimit !== -1 && documentCount >= cacheLimit
       };
     }
     return { item, limitIsRiched: null };
   }
 
   static async createClient(
-    DB_URI = process.env.DB_URI,
+    DB_URI: string,
     connectAutomatically = true
   ) {
     const client = new MongoClient(

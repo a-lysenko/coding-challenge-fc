@@ -1,15 +1,21 @@
 import { createServer } from './server';
 import { Express } from 'express';
 import request from 'supertest';
-import { Collection, MongoClient } from 'mongodb';
+import { Collection, MongoClient, ObjectId } from 'mongodb';
 
+let instance: ReturnType<typeof createServer> extends Promise<infer R> ? R : never;
 let app: Express;
 let dbClient: MongoClient;
 let dacheCollection: Collection;
 
 beforeAll(async () => {
-  console.log(process.env.NODE_ENV, '### process.env.NODE_ENV');
-  const instance = await createServer();
+  if (process.env.DB_URI_TEST) {
+    process.env.DB_URI = process.env.DB_URI_TEST
+  }
+
+  process.env.CACHE_LIMIT = '3';
+
+  instance = await createServer();
   app = instance.app;
   dbClient = instance.dbClient;
 
@@ -62,7 +68,7 @@ describe('POST', () => {
     });
   })
 
-  describe('for NON cached key', () => {
+  describe('for NON cached key (cache limit is NOT reached)', () => {
     const nonCachedKey = 'non-cached-key';
 
     test('should add new item to db', async () => {
@@ -94,7 +100,62 @@ describe('POST', () => {
       });
     });
   })
-});
+
+  describe('for NON cached key (cache limit IS reached)', () => {
+    const nonCachedKey = 'non-cached-key';
+    const cacheOldestKey = 'cache-oldest-key';
+    let oldestDocId: ObjectId;
+
+    beforeEach(async () => {
+      const docs = [
+        { key: 'cache-key-1', value: 'cache-value-1', created: new Date() },
+        { key: 'cache-key-2', value: 'cache-value-2', created: new Date(Date.now() - 10 * 1000) }
+      ];
+      const oldestDoc = { key: cacheOldestKey, value: 'cache-oldest-value', created: new Date(Date.now() - 60 * 1000) };
+
+      await dacheCollection.insertMany(docs);
+      const result = await dacheCollection.insertOne(oldestDoc);
+      oldestDocId = result.insertedId;
+    })
+
+    test('should keep cache size within cache limit', async () => {
+      await request(app)
+        .post('/api/cache')
+        .send({ key: nonCachedKey });
+
+      const resultAll = await dacheCollection.find({}).toArray();
+      expect(resultAll.length).toBe(3);
+    })
+
+    test('should add new item to db BY overriding the oldest one', async () => {
+      await request(app)
+        .post('/api/cache')
+        .send({ key: nonCachedKey });
+      const itemNonCachedKey = await dacheCollection.findOne({ key: nonCachedKey });
+
+      expect(itemNonCachedKey).toEqual({
+        _id: oldestDocId,
+        key: nonCachedKey,
+        value: expect.not.stringContaining('cache-oldest-value'),
+        created: expect.any(Date)
+      });
+    })
+
+    test('should retrieve newly cached item from db with log message', async () => {
+      const result = await request(app)
+        .post('/api/cache')
+        .send({ key: nonCachedKey });
+      expect(result.status).toEqual(201);
+      expect(result.body).toEqual({
+        message: 'Cache miss',
+        item: expect.objectContaining({
+          key: nonCachedKey,
+          value: expect.any(String)
+        })
+      });
+    })
+  })
+})
 
 describe('UPDATE', () => {
   describe('for cached key', () => {
@@ -133,7 +194,7 @@ describe('UPDATE', () => {
     });
   })
 
-  describe('for NON cached key', () => {
+  describe('for NON cached key (cache limit is NOT reached)', () => {
     const nonCachedKey = 'non-cached-key';
     const updatedValue = 'Updated value';
 
@@ -161,6 +222,61 @@ describe('UPDATE', () => {
 
       expect(result.status).toEqual(201);
     });
+  })
+
+  describe('for NON cached key (cache limit IS reached)', () => {
+    const nonCachedKey = 'non-cached-key';
+    const cacheOldestKey = 'cache-oldest-key';
+    let oldestDocId: ObjectId;
+
+    beforeEach(async () => {
+      const docs = [
+        { key: 'cache-key-1', value: 'cache-value-1', created: new Date() },
+        { key: 'cache-key-2', value: 'cache-value-2', created: new Date(Date.now() - 10 * 1000) }
+      ];
+      const oldestDoc = { key: cacheOldestKey, value: 'cache-oldest-value', created: new Date(Date.now() - 60 * 1000) };
+
+      await dacheCollection.insertMany(docs);
+      const result = await dacheCollection.insertOne(oldestDoc);
+      oldestDocId = result.insertedId;
+    })
+
+    test('should keep cache size within cache limit', async () => {
+      await request(app)
+        .put('/api/cache')
+        .send({ key: nonCachedKey });
+
+      const resultAll = await dacheCollection.find({}).toArray();
+      expect(resultAll.length).toBe(3);
+    })
+
+    test('should add new item to db BY overriding the oldest one', async () => {
+      await request(app)
+        .post('/api/cache')
+        .send({ key: nonCachedKey });
+      const itemNonCachedKey = await dacheCollection.findOne({ key: nonCachedKey });
+
+      expect(itemNonCachedKey).toEqual({
+        _id: oldestDocId,
+        key: nonCachedKey,
+        value: expect.not.stringContaining('cache-oldest-value'),
+        created: expect.any(Date)
+      });
+    })
+
+    test('should retrieve newly cached item from db with log message', async () => {
+      const result = await request(app)
+        .post('/api/cache')
+        .send({ key: nonCachedKey });
+      expect(result.status).toEqual(201);
+      expect(result.body).toEqual({
+        message: 'Cache miss',
+        item: expect.objectContaining({
+          key: nonCachedKey,
+          value: expect.any(String)
+        })
+      });
+    })
   })
 });
 

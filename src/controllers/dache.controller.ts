@@ -7,7 +7,8 @@ export enum DacheSearchMsg {
 }
 
 export class DacheController {
-  constructor(private dacheModel: DacheModel) {}
+  constructor(private dacheModel: DacheModel) {
+  }
 
   getAll() {
     return this.dacheModel.getCollection().find(
@@ -24,9 +25,13 @@ export class DacheController {
     }
 
     const value = randomize('*', 27);
-    const result = await this.dacheModel.create(key, value);
-
-    console.log(`Dache save. inserted id: ${result.insertedId}`);
+    if (limitIsRiched) {
+      await this.dacheModel.createThroughOverride(key, value);
+      // console.log(`Dache save. Added through REUSE value: ${createResult.value}`);
+    } else {
+      await this.dacheModel.create(key, value);
+      // console.log(`Dache save. inserted id: ${result.insertedId}`);
+    }
 
     return { message: DacheSearchMsg.Miss, item: { key, value } };
   }
@@ -51,9 +56,13 @@ export class DacheController {
       return { created: false };
     }
 
-    const result = await this.dacheModel.create(key, value);
-
-    console.log(`Dache update. inserted id: ${result.insertedId}`, result);
+    if (limitIsRiched) {
+      await this.dacheModel.createThroughOverride(key, value);
+      // console.log(`Dache update. Added through REUSE value: ${createResult.value}`);
+    } else {
+      await this.dacheModel.create(key, value);
+      // console.log(`Dache update. inserted id: ${result.insertedId}`);
+    }
 
     return { created: true };
   }

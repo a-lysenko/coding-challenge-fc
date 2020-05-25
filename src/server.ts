@@ -13,7 +13,7 @@ export const createServer = async () => {
   app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, 'public')));
 
-  const {client: dbClient, db} = await DacheModel.createClient();
+  const { client: dbClient, db } = await DacheModel.createClient(process.env.DB_URI);
   const dacheModel = new DacheModel(db);
   const rootRouter = await rootRoutes.createRootRoutes(dacheModel);
 

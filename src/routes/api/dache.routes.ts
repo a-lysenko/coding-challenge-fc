@@ -1,6 +1,5 @@
-import { Db } from 'mongodb';
 import express from 'express';
-import { DacheController, DacheSearchMsg} from '../../controllers/dache.controller';
+import { DacheController, DacheSearchMsg } from '../../controllers/dache.controller';
 import { DacheModel, Item } from '../../models/dache.model';
 
 export const createRoutes = (dacheModel: DacheModel) => {
