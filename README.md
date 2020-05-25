@@ -21,6 +21,18 @@ OR
 
 ## Details
 
+Each cache item is stored with a `created` parameter. It reflects the date of the latest one of the following events applied to the item: creation (may occur on POST, PUT), update (may occur on PUT), retrieving of the single item (may occur on POST).
+Value of it is used within the lookup (GET). Those cached items meet the lookup, that have the `created` value + `ttl` (set on `CACHE_TTL_MS`) exceeds the current date. Others aren't shown.
+Also the cache has a maximum of cached items (defined by `CACHE_LIMIT`). If the limit is reached, then new item is not added. Instead the oldest item is found by `created` and is overriden by new data (cache, value, current date).
+
+### API
+`GET /api/cache` - retrieves all valid cached items. Expired cache items are discarded.
+`POST /api/cache` - `request body {key: string}` - returns cached data against the given key (200). If key is not in cache, random value is cached against this key and returned in the response (201).
+`PUT /api/cache/:key` - `request body {value: string}` - updates cached data against the given key (204). If key is not in cache, random data is cached against this key and returned in the response (201 with no content for PUT).
+`DELETE /api/cache/:key` - removes cached data against the given key (204). If the key is not in cache, the request is considered to be a succesfull one (204) .
+`DELETE /api/cache` - removes all cached data (204).
+
+
 ### Environment settings
 Project needs the following environment properties to be set:
 * SERVER_PORT - a port the server is running
