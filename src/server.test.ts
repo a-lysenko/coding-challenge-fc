@@ -28,8 +28,8 @@ beforeEach(() => {
 
 describe('Get all', () => {
   const docs = [
-    { key: 'cache key 1', value: 'Random value 10' },
-    { key: 'cache key 2', value: 'Random value 20' }
+    { key: 'cache key 1', value: 'Random value 10', created: new Date() },
+    { key: 'cache key 2', value: 'Random value 20', created: new Date() }
   ];
 
   beforeEach(async () => {
@@ -41,7 +41,9 @@ describe('Get all', () => {
   test('should retrieve all stored data', async (done) => {
     const result = await request(app).get('/api/cache');
     expect(result.status).toEqual(200);
-    expect(result.body).toEqual(docs);
+    expect(result.body).toEqual(
+      docs.map(doc => ({...doc, created: doc.created.toISOString()}))
+    );
     done();
   });
 });
