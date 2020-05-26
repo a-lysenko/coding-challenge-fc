@@ -1,4 +1,4 @@
-# Fashion Cloud Coding Challenge
+# Coding Challenge FC
 
 The application provides the API to cache data, retrieve, update and remove already cached data.The mongodb database is used as a cache storage.
 Besides, the application has a set of integration tests to cover the implemented functionality.
