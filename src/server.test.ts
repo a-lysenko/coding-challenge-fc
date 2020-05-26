@@ -254,8 +254,8 @@ describe('UPDATE', () => {
 
     test('should keep cache size within cache limit', async () => {
       await request(app)
-        .put('/api/cache')
-        .send({ key: nonCachedKey });
+        .put(`/api/cache/${nonCachedKey}`)
+        .send({ value: 'non-cached-value' });
 
       const resultAll = await dacheCollection.find({}).toArray();
       expect(resultAll.length).toBe(3);
@@ -263,8 +263,8 @@ describe('UPDATE', () => {
 
     test('should add new item to db BY overriding the oldest one', async () => {
       await request(app)
-        .post('/api/cache')
-        .send({ key: nonCachedKey });
+        .put(`/api/cache/${nonCachedKey}`)
+        .send({ value: 'non-cached-value' });
       const itemNonCachedKey = await dacheCollection.findOne({ key: nonCachedKey });
 
       expect(itemNonCachedKey).toEqual({
@@ -277,16 +277,9 @@ describe('UPDATE', () => {
 
     test('should retrieve newly cached item from db with log message', async () => {
       const result = await request(app)
-        .post('/api/cache')
-        .send({ key: nonCachedKey });
+        .put(`/api/cache/${nonCachedKey}`)
+        .send({ value: 'non-cached-value' });
       expect(result.status).toEqual(201);
-      expect(result.body).toEqual({
-        message: 'Cache miss',
-        item: expect.objectContaining({
-          key: nonCachedKey,
-          value: expect.any(String)
-        })
-      });
     })
   })
 });

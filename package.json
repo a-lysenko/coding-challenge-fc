@@ -12,7 +12,7 @@
     "dev": "nodemon --watch src -e ts --exec npm run dev:start",
     "start": "node --inspect=3000 .",
     "clear_jest": "jest --clearCache",
-    "test": "NODE_ENV=test jest  --verbose"
+    "test": "jest --verbose"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",

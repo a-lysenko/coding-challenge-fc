@@ -39,8 +39,8 @@ export const createRoutes = (dacheModel: DacheModel) => {
   // delete one
   router.delete<{ id: string }, null>('/:id', async (req, res) => {
     try {
-      const deletedCount = await dacheController.remove(req.params.id);
-      console.log('route item remove. deletedCount', deletedCount);
+      await dacheController.remove(req.params.id);
+      // console.log('route item remove. deletedCount', deletedCount);
       res.sendStatus(204);
     } catch (err) {
       console.log('route item remove. ERROR');
